@@ -1,0 +1,13 @@
+{
+  "name": "webaudio",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "yarn build:ts",
+    "build:ts": "tsc --project tsconfig.json --outDir ./dist",
+    "build:watch": "yarn build:ts -- --watch"
+  },
+  "devDependencies": {}
+}
