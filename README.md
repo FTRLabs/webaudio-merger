@@ -1,4 +1,4 @@
-# HTML5 WebAudio channel merger
+# HTML5 WebAudio merger
 
 Quick sample code on how to use WebAudio to merge multiple audio files.
 
