@@ -7,11 +7,13 @@
   "scripts": {
     "build": "yarn build:ts && cp index.html ./dist",
     "build:ts": "tsc --project tsconfig.json --outDir ./dist",
-    "build:watch": "yarn build:ts -- --watch",
-    "dev": "http-server -S -a localhost -p 9000 -C certificate.pem"
+    "dev": "nodemon --watch ./src -e ts --exec \"yarn dev:serve\"",
+    "dev:serve": "yarn build && http-server -S -a localhost -p 9000 -c-1 -C certificate.pem"
   },
   "devDependencies": {
     "http-server": "^0.11.1",
+    "nodemon": "^1.17.1",
+    "ts-node": "^5.0.1",
     "typescript": "^2.7.2"
   },
   "dependencies": {}
