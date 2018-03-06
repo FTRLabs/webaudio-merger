@@ -5,9 +5,14 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "build": "yarn build:ts",
+    "build": "yarn build:ts && cp index.html ./dist",
     "build:ts": "tsc --project tsconfig.json --outDir ./dist",
-    "build:watch": "yarn build:ts -- --watch"
+    "build:watch": "yarn build:ts -- --watch",
+    "dev": "http-server -S -a localhost -p 9000 -C certificate.pem"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "http-server": "^0.11.1",
+    "typescript": "^2.7.2"
+  },
+  "dependencies": {}
 }
