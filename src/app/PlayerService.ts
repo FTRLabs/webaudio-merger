@@ -35,6 +35,10 @@ export class PlayerService {
     this.channels.forEach(c => c.source.start())
   }
 
+  updateTime (value: number) {
+    console.log(`--> Updating time to ${value}`)
+  }
+
   private async eagerLoadChannelContent (channel: Channel): Promise<void> {
     const audioBuffers = await Promise.all(this.trms.map(async trm => this.downloadAudio(trm, channel.index)))
     const audioBuffer = this.concatenate(audioBuffers)
