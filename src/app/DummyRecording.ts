@@ -1,4 +1,4 @@
-import { Recording } from './Recording'
+import { Recording } from './types/Recording'
 
 const dummyTrms = [
   'MA-BAR-BAR-CH2-C1-R1--SUPE_20160914-1401_01d20e9084b43dd0',

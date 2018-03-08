@@ -1,9 +1,11 @@
-import { Recording } from './Recording'
-import { Channel } from './Channel'
-import { Trm } from './Trm'
+import { Recording } from './types/Recording'
+import { Channel } from './types/Channel'
+import { Trm } from './types/Trm'
 import { TrmService } from './TrmService'
+import { Injectable } from '@angular/core'
 
-export class Player {
+@Injectable()
+export class PlayerService {
 
   gainNodes: GainNode[]
 

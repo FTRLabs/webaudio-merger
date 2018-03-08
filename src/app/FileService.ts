@@ -1,3 +1,6 @@
+import { Injectable } from '@angular/core'
+
+@Injectable()
 export class FileService {
 
   download (path: string): Promise<ArrayBuffer> {
