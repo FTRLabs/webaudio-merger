@@ -7,14 +7,17 @@
   "scripts": {
     "build": "yarn build:ts && cp index.html ./dist",
     "build:ts": "tsc --project tsconfig.json --outDir ./dist",
-    "dev": "nodemon --watch ./src -e ts --exec \"yarn dev:serve\"",
+    "dev": "webpack-dev-server --config webpack.config.js --https --cert certificate.pem --key key.pem",
     "dev:serve": "yarn build && http-server -S -a localhost -p 9000 -c-1 -C certificate.pem"
   },
   "devDependencies": {
     "http-server": "^0.11.1",
     "nodemon": "^1.17.1",
+    "ts-loader": "^3.0.0",
     "ts-node": "^5.0.1",
-    "typescript": "^2.7.2"
+    "typescript": "^2.7.2",
+    "webpack": "^3.0.0",
+    "webpack-dev-server": "^2.0.0"
   },
   "dependencies": {}
 }

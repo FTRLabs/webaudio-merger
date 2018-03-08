@@ -18,11 +18,10 @@ Build and run:
 
 ```
 yarn
-yarn build
 yarn dev
 ``` 
 
 Browse to:
 ```
-https://localhost:9000
+https://localhost:8080
 ```
