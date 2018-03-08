@@ -1,6 +1,6 @@
-export class ArrayBufferService {
+export class FileService {
 
-  getArrayBuffer (path: string): Promise<ArrayBuffer> {
+  download (path: string): Promise<ArrayBuffer> {
     return new Promise<ArrayBuffer>(resolve => {
       const request = new XMLHttpRequest()
       request.open('GET', path, true)

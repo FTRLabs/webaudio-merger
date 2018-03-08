@@ -1,5 +1,5 @@
 import { Player } from './Player'
-import { DUMMY_RECORDING } from './data/DummyRecording'
+import { DUMMY_RECORDING } from './DummyRecording'
 import { ChannelControl } from './ChannelControls'
 
 export class Application {

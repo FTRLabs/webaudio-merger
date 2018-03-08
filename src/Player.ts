@@ -1,27 +1,32 @@
 import { Recording } from './Recording'
-import { ArrayBufferService } from './ArrayBufferService'
 import { Channel } from './Channel'
+import { Trm } from './Trm'
+import { TrmService } from './TrmService'
 
 export class Player {
 
   gainNodes: GainNode[]
 
   private channels: Channel[] = []
+  private trms: Trm[] = []
 
   constructor (
-    private readonly audioDataService: ArrayBufferService,
+    private readonly trmService: TrmService,
     private readonly audioContext: AudioContext
   ) {
   }
 
   async load (recording: Recording): Promise<void> {
     this.channels = await Promise.all(
-      indexes(recording.numberOfChannels).map(index => this.createChannel(recording, index))
+      indexes(recording.numberOfChannels).map(index => this.createChannel(index))
     )
+
+    this.trms = recording.trms
 
     this.gainNodes = this.channels.map(c => c.gain)
 
-    await Promise.all(this.channels.map(this.eagerLoadChannelContent.bind(this)))
+    // TODO: don't do this all up-front
+    await Promise.all(this.channels.map(channel => this.eagerLoadChannelContent(channel)))
   }
 
   play (): void {
@@ -29,17 +34,17 @@ export class Player {
   }
 
   private async eagerLoadChannelContent (channel: Channel): Promise<void> {
-    const audioBuffers = await Promise.all(channel.paths.map(async path => this.loadAudioBuffer(path)))
+    const audioBuffers = await Promise.all(this.trms.map(async trm => this.downloadAudio(trm, channel.index)))
     const audioBuffer = this.concatenate(audioBuffers)
     channel.source.buffer = audioBuffer
   }
 
-  private async loadAudioBuffer (path: string): Promise<AudioBuffer> {
-    const arrayBuffer = await this.audioDataService.getArrayBuffer(path)
+  private async downloadAudio (trm: Trm, index: number): Promise<AudioBuffer> {
+    const arrayBuffer = await this.trmService.download(trm, index)
     return this.audioContext.decodeAudioData(arrayBuffer)
   }
 
-  private async createChannel (recording: Recording, index: number): Promise<Channel> {
+  private async createChannel (index: number): Promise<Channel> {
     const source = this.audioContext.createBufferSource()
 
     const gain = this.audioContext.createGain()
@@ -52,8 +57,7 @@ export class Player {
     return {
       index,
       source,
-      gain,
-      paths: recording.trms.map(t => t.channels[index].path)
+      gain
     }
   }
 

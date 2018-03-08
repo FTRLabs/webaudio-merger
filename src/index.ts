@@ -1,8 +1,9 @@
 import { Player } from './Player'
-import { ArrayBufferService } from './ArrayBufferService'
+import { FileService } from './FileService'
 import { Application } from './Application'
+import { TrmService } from './TrmService'
 
 new Application(new Player(
-  new ArrayBufferService(),
-  new AudioContext()
+  new TrmService(new FileService()),
+  new AudioContext(),
 )).start()

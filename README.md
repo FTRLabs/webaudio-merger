@@ -14,6 +14,8 @@ openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout key.pem -out c
 certutil -d sql:$HOME/.pki/nssdb -A -t "CT,C,C" -n certificate.pem -i certificate.pem
 ```
 
+Extract the TRM files in [this sample recording](https://drive.google.com/open?id=1E6lWt9ol-cysOIEXU9t22wNfRgTag_4c) directly to the root of the directory `./audio`.
+
 Build and run:
 
 ```
