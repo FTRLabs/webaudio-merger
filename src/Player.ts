@@ -61,7 +61,6 @@ export class Player {
     }
   }
 
-
   // Note: Assumes each input buffer has only 1 channel
   private concatenate (buffers: AudioBuffer[]) {
 
