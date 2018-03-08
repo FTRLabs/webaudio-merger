@@ -48,3 +48,4 @@ src/assets/audio/*
 
 # keys
 *.pem
+src/assets/trm/*

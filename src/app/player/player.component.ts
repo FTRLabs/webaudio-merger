@@ -10,6 +10,8 @@ import { PlayerService } from '../PlayerService'
 export class PlayerComponent implements OnInit {
 
   gainNodes: GainNode[]
+  durationSeconds: number | undefined
+  currentTimeSeconds: number | undefined
 
   constructor(
     readonly playerService: PlayerService
@@ -20,6 +22,7 @@ export class PlayerComponent implements OnInit {
     await this.playerService.load(DUMMY_RECORDING)
 
     this.gainNodes = this.playerService.gainNodes
+    this.durationSeconds = this.playerService.durationSeconds
 
     this.playerService.play()
   }

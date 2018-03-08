@@ -7,10 +7,20 @@ import { Injectable } from '@angular/core'
 @Injectable()
 export class PlayerService {
 
-  gainNodes: GainNode[]
+  gainNodes: GainNode[] = []
+  durationSeconds: number | undefined
 
-  private channels: Channel[] = []
+  // TODO: no events from AudioBufferSourceNode?
+  currentTimeSeconds: number | undefined
+
+  private numberOfChannels: number | undefined
   private trms: Trm[] = []
+  private channels: Channel[] = []
+
+  /**
+   * Stored outside channels because seeking requires destroying each channel's source node, but we reuse the buffer
+   */
+  private channelBuffers: AudioBuffer[] = []
 
   constructor (
     private readonly trmService: TrmService,
@@ -19,30 +29,43 @@ export class PlayerService {
   }
 
   async load (recording: Recording): Promise<void> {
-    this.channels = await Promise.all(
-      indexes(recording.numberOfChannels).map(index => this.createChannel(index))
-    )
-
+    this.numberOfChannels = recording.numberOfChannels
     this.trms = recording.trms
 
-    this.gainNodes = this.channels.map(c => c.gain)
+    this.createChannels()
 
     // TODO: don't do this all up-front
-    await Promise.all(this.channels.map(channel => this.eagerLoadChannelContent(channel)))
+    this.channelBuffers = await Promise.all(this.channels.map(channel => this.downloadAudioBuffers(channel)))
+    this.setChannelBuffers()
+
+    // Assume all channels have the same duration
+    this.durationSeconds = this.channels[0].duration
   }
 
   play (): void {
     this.channels.forEach(c => c.source.start())
   }
 
-  updateTime (value: number) {
-    console.log(`--> Updating time to ${value}`)
+  updateTime (seconds: number) {
+    this.channels.forEach(c => c.stop())
+    this.createChannels()
+    this.setChannelBuffers()
+    this.channels.forEach(c => c.start(0, seconds))
   }
 
-  private async eagerLoadChannelContent (channel: Channel): Promise<void> {
+  private createChannels () {
+    this.channels = indexes(this.numberOfChannels).map(index => this.createChannel(index))
+    this.gainNodes = this.channels.map(c => c.gain)
+  }
+
+  private setChannelBuffers () {
+    this.channels.forEach((channel, index) => channel.setBuffer(this.channelBuffers[index] || null))
+  }
+
+  private async downloadAudioBuffers (channel: Channel): Promise<AudioBuffer> {
     const audioBuffers = await Promise.all(this.trms.map(async trm => this.downloadAudio(trm, channel.index)))
     const audioBuffer = this.concatenate(audioBuffers)
-    channel.source.buffer = audioBuffer
+    return audioBuffer
   }
 
   private async downloadAudio (trm: Trm, index: number): Promise<AudioBuffer> {
@@ -50,7 +73,7 @@ export class PlayerService {
     return this.audioContext.decodeAudioData(arrayBuffer)
   }
 
-  private async createChannel (index: number): Promise<Channel> {
+  private createChannel (index: number): Channel {
     const source = this.audioContext.createBufferSource()
 
     const gain = this.audioContext.createGain()
@@ -60,11 +83,11 @@ export class PlayerService {
 
     gain.gain.value = .5
 
-    return {
+    return new Channel(
       index,
       source,
       gain
-    }
+    )
   }
 
   // Note: Assumes each input buffer has only 1 channel
