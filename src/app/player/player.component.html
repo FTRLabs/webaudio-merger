@@ -1,3 +1,13 @@
-<p>
-  Player:
-</p>
+<div>
+  Channels:
+  <div *ngFor="let gainNode of gainNodes; let index = index">
+    <label>{{index}}</label>
+    <input
+      type="range"
+      min="0"
+      max="10"
+      value="5"
+      (change)="setGain(gainNode, $event)"
+    />
+  </div>
+</div>

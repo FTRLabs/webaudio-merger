@@ -1,7 +1,4 @@
-import { Component, OnInit } from '@angular/core';
-import { DUMMY_RECORDING } from './DummyRecording'
-import { ChannelControl } from './ChannelControls'
-import { PlayerService } from './PlayerService'
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-root',
@@ -9,5 +6,4 @@ import { PlayerService } from './PlayerService'
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = 'app';
 }

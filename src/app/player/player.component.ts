@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { DUMMY_RECORDING } from '../DummyRecording'
-import { ChannelControl } from '../ChannelControls'
 import { PlayerService } from '../PlayerService'
 
 @Component({
@@ -10,6 +9,8 @@ import { PlayerService } from '../PlayerService'
 })
 export class PlayerComponent implements OnInit {
 
+  gainNodes: GainNode[]
+
   constructor(
     readonly playerService: PlayerService
   ) { }
@@ -18,9 +19,12 @@ export class PlayerComponent implements OnInit {
 
     await this.playerService.load(DUMMY_RECORDING)
 
-    this.playerService.gainNodes.map((gainNode, index) => new ChannelControl().render(gainNode, index))
+    this.gainNodes = this.playerService.gainNodes
 
     this.playerService.play()
   }
 
+  setGain(gainNode: GainNode, event: any) {
+    gainNode.gain.value = Number(event.target.value) / 10
+  }
 }
