@@ -1,11 +1,16 @@
 /**
  * Lazily decodes audio, to save memory. Can connect to a subsequent chunk for autoplay.
  */
+import { Observable } from 'rxjs/Observable'
+import { Subject } from 'rxjs/Subject'
+
 export class Chunk {
 
+  ended: Observable<MediaStreamErrorEvent>
+
+  private endedSubject: Subject<MediaStreamErrorEvent> = new Subject<MediaStreamErrorEvent>()
   private audioBuffer: AudioBuffer | undefined
   private source: AudioBufferSourceNode | undefined
-  private nextChunk: Chunk | undefined
   private destination: AudioNode | undefined
 
   constructor (
@@ -14,6 +19,7 @@ export class Chunk {
     private readonly arrayBuffer: ArrayBuffer,
     private audioContext: AudioContext
   ) {
+    this.ended = this.endedSubject.asObservable()
   }
 
   async start (when?: number, offset?: number): Promise<void> {
@@ -25,33 +31,20 @@ export class Chunk {
 
     source.connect(this.destination)
 
-    // TODO: when does this fire?
     source.onended = async event => {
       console.log(`--> chunk ended`, event)
-      source.stop()
-      if (this.nextChunk) {
-        console.log(`--> Starting nextChunk:`, this.nextChunk)
-
-        this.nextChunk.connect(this.destination)
-
-        // TODO: synchronize somehow! Can't really use `onended` here, unless we modify the `when` value depending on seeking/pausing
-        await this.nextChunk.start()
-      }
+      this.cleanBuffer()
+      this.endedSubject.next(event)
     }
 
     console.log(`--> starting chunk at ${when}, from ${offset}`)
     source.start(when, offset)
-    console.log(`--> started chunk at ${when}, from ${offset}`)
 
     this.source = source
   }
 
   connect (node: AudioNode) {
     this.destination = node
-  }
-
-  onEnd (nextChunk: Chunk | null): void {
-    this.nextChunk = nextChunk
   }
 
   stop (): void {
@@ -73,13 +66,15 @@ export class Chunk {
    * Inspired by https://github.com/goldfire/howler.js/blob/master/src/howler.core.js#L1965
    */
   private cleanBuffer () {
-    const scratchBuffer = this.audioContext.createBuffer(1, 1, 22050);
-    this.source.onended = null;
-    this.source.disconnect();
-    try {
-      this.source.buffer = scratchBuffer;
-    } catch (e) {
+    if (this.source) {
+      const scratchBuffer = this.audioContext.createBuffer(1, 1, 22050);
+      this.source.onended = null;
+      this.source.disconnect();
+      try {
+        this.source.buffer = scratchBuffer;
+      } catch (e) {
+      }
+      this.source = undefined;
     }
-    this.source = undefined;
   }
 }

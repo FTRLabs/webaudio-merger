@@ -29,6 +29,15 @@ export class PlayerComponent implements OnInit {
     this.playerService.play()
   }
 
+  play() {
+    this.playerService.play()
+  }
+
+  stop() {
+    this.playerService.stop()
+    this.currentTimeSeconds = 0
+  }
+
   setGain (gainNode: GainNode, value: string) {
     gainNode.gain.value = Number(value) / 10
   }

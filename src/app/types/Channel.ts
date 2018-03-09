@@ -1,4 +1,6 @@
 import { Chunk } from '../Chunk'
+import { Observable } from 'rxjs/Observable'
+import { Subscription } from 'rxjs/Subscription'
 
 /**
  * Time that each chunk starts/ends (seconds)
@@ -12,6 +14,7 @@ export class Channel {
 
   private chunks: Chunk[] = []
   private chunkRanges: ChunkRange[] = []
+  private chunkEndedSubscription: Subscription | undefined
 
   constructor (
     readonly gain: GainNode
@@ -25,14 +28,7 @@ export class Channel {
   load (chunks: Chunk[]) {
     this.chunks = chunks
 
-    // TODO: modifying param is dirty
-    chunks.forEach((chunk, index) => {
-      if (chunks[index + 1]) {
-        console.log(`--> Connecting chunk ${index} to chunk ${index + 1}`)
-        chunk.onEnd(chunks[index + 1])
-      }
-      chunk.connect(this.gain)
-    })
+    chunks.forEach(chunk => chunk.connect(this.gain))
 
     let cumulativeOffset = 0
     this.chunkRanges = chunks
@@ -56,10 +52,38 @@ export class Channel {
     // Stop everything! Then play the appropriate chunk; TODO: make this less clunky
     this.chunks.forEach(c => c.stop())
 
-    await this.chunks[chunkIndex].start(when, withinChunkOffset)
+    const chunk = this.chunks[chunkIndex]
+    this.playNextChunkOnEnd(chunkIndex)
+    await chunk.start(when, withinChunkOffset)
   }
 
   stop () {
+    this.clearChunkEndedSubscription()
     this.chunks.forEach(c => c.stop())
+  }
+
+  private playNextChunkOnEnd (chunkIndex: number) {
+    this.clearChunkEndedSubscription()
+
+    const chunk = this.chunks[chunkIndex]
+    const nextChunk = this.chunks[chunkIndex + 1]
+
+    if (nextChunk) {
+      this.chunkEndedSubscription = chunk.ended.subscribe(e => {
+          // TODO: synchronize with other channels! Only possible if we're willing to have a pessimistic gap at TRM boundaries?
+          console.log(`--> Attempt start chunk ${chunkIndex + 1}`, e)
+          nextChunk.start(0, 0)
+        }, error => {
+          console.log(`--> Failed to start chunk ${chunkIndex + 1}:`, error)
+        }
+      )
+    }
+  }
+
+  private clearChunkEndedSubscription () {
+    if (this.chunkEndedSubscription) {
+      this.chunkEndedSubscription.unsubscribe()
+      this.chunkEndedSubscription = undefined
+    }
   }
 }

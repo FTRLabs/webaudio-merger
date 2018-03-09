@@ -24,7 +24,7 @@ const dummyTrms = [
 ]
 
 export const DUMMY_RECORDING: Recording = {
-  numberOfChannels: 8,
+  numberOfChannels: 1,
   trms: dummyTrms.map(dummyTrm => ({
     name: dummyTrm,
 

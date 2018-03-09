@@ -67,6 +67,10 @@ export class PlayerService {
     this.channels.forEach(c => c.start(syncStart))
   }
 
+  stop (): void {
+    this.channels.forEach(c => c.stop())
+  }
+
   updateTime (seconds: number) {
     const syncStart = this.audioContext.currentTime + MAX_EXPECTED_DECODE_DELAY_SEC
     console.log(`--> Will start all channels at ${syncStart}`)
