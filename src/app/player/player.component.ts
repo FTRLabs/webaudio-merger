@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { DUMMY_RECORDING } from '../DummyRecording'
 import { PlayerService } from '../PlayerService'
+import { Observable } from 'rxjs/Observable'
 
 @Component({
   selector: 'app-player',
@@ -9,15 +10,16 @@ import { PlayerService } from '../PlayerService'
 })
 export class PlayerComponent implements OnInit {
 
-  gainNodes: GainNode[]
-  durationSeconds: number | undefined
+  gainNodes: Observable<GainNode[]>
+  durationSeconds: Observable<number>
   currentTimeSeconds: number | undefined
 
-  constructor(
+  constructor (
     readonly playerService: PlayerService
-  ) { }
+  ) {
+  }
 
-  async ngOnInit() {
+  async ngOnInit () {
 
     await this.playerService.load(DUMMY_RECORDING)
 
@@ -27,11 +29,11 @@ export class PlayerComponent implements OnInit {
     this.playerService.play()
   }
 
-  setGain(gainNode: GainNode, value: string) {
+  setGain (gainNode: GainNode, value: string) {
     gainNode.gain.value = Number(value) / 10
   }
 
-  changeTime(value: number) {
+  changeTime (value: number) {
     this.playerService.updateTime(value)
   }
 }

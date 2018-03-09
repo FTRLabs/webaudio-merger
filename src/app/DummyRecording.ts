@@ -25,5 +25,13 @@ const dummyTrms = [
 
 export const DUMMY_RECORDING: Recording = {
   numberOfChannels: 8,
-  trms: dummyTrms.map(dummyTrm => ({name: dummyTrm}))
+  trms: dummyTrms.map(dummyTrm => ({
+    name: dummyTrm,
+
+    // TODO: assume we can get this from server.
+    // Manually worked out this time, using these two commands:
+    // $ ffmpeg -i <in>.aac <out>.wav
+    // $ ffprobe -loglevel fatal -print_format json -show_format <out>.wav
+    durationSeconds: 300.094694
+  }))
 }
