@@ -32,16 +32,16 @@ export class Chunk {
       if (this.nextChunk) {
         console.log(`--> Starting nextChunk:`, this.nextChunk)
 
-        // TODO: is decoding fast enough to prevent a gap in playback between chunks?
-        // TODO: will this be sufficiently synchronized across channels?
         this.nextChunk.connect(this.destination)
+
+        // TODO: synchronize somehow! Can't really use `onended` here, unless we modify the `when` value depending on seeking/pausing
         await this.nextChunk.start()
       }
     }
 
-    // TODO: synchronize this across channels somehow; maybe rename this method to "load", then separately call start
+    console.log(`--> starting chunk at ${when}, from ${offset}`)
     source.start(when, offset)
-    console.log(`--> started chunk at ${this.audioContext.currentTime}`)
+    console.log(`--> started chunk at ${when}, from ${offset}`)
 
     this.source = source
   }

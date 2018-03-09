@@ -2,11 +2,17 @@ import { Recording } from './types/Recording'
 import { Channel } from './types/Channel'
 import { Trm } from './types/Trm'
 import { TrmService } from './TrmService'
-import { Injectable } from '@angular/core'
 import { Chunk } from './Chunk'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
+import { Injectable } from '@angular/core'
+
+/**
+ * To ensure channels are synchronized (even in the context of variable processing delay per channel),
+ * always request that channels _start_ playing after this specified lag
+ */
+const MAX_EXPECTED_DECODE_DELAY_SEC = 2
 
 @Injectable()
 export class PlayerService {
@@ -56,11 +62,15 @@ export class PlayerService {
   }
 
   play (): void {
-    this.channels.forEach(c => c.start())
+    const syncStart = this.audioContext.currentTime + MAX_EXPECTED_DECODE_DELAY_SEC
+    console.log(`--> Will start all channels at ${syncStart}`)
+    this.channels.forEach(c => c.start(syncStart))
   }
 
   updateTime (seconds: number) {
-    this.channels.forEach(c => c.start(0, seconds))
+    const syncStart = this.audioContext.currentTime + MAX_EXPECTED_DECODE_DELAY_SEC
+    console.log(`--> Will start all channels at ${syncStart}`)
+    this.channels.forEach(c => c.start(syncStart, seconds))
   }
 
   private createChannel (): Channel {
