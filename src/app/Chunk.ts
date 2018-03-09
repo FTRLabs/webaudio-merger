@@ -30,6 +30,7 @@ export class Chunk {
       console.log(`--> chunk ended`, event)
       source.stop()
       if (this.nextChunk) {
+        console.log(`--> Starting nextChunk:`, this.nextChunk)
 
         // TODO: is decoding fast enough to prevent a gap in playback between chunks?
         // TODO: will this be sufficiently synchronized across channels?
@@ -38,7 +39,11 @@ export class Chunk {
       }
     }
 
+    // TODO: synchronize this across channels somehow; maybe rename this method to "load", then separately call start
     source.start(when, offset)
+    console.log(`--> started chunk at ${this.audioContext.currentTime}`)
+
+    this.source = source
   }
 
   connect (node: AudioNode) {

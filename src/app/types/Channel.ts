@@ -27,8 +27,9 @@ export class Channel {
 
     // TODO: modifying param is dirty
     chunks.forEach((chunk, index) => {
-      if (chunk[index + 1]) {
-        chunk.onEnd(chunk[index + 1])
+      if (chunks[index + 1]) {
+        console.log(`--> Connecting chunk ${index} to chunk ${index + 1}`)
+        chunk.onEnd(chunks[index + 1])
       }
       chunk.connect(this.gain)
     })
@@ -48,7 +49,7 @@ export class Channel {
     if (chunkIndex < 0) {
       throw new RangeError(`Could not find chunk corresponding to channel offset: ${offset}`)
     }
-    console.log(`--> playing chunk ${chunkIndex}`)
+    console.log(`--> playing chunk ${chunkIndex} (because ${offset} is between ${this.chunkRanges[chunkIndex].start} and ${this.chunkRanges[chunkIndex].end})`)
 
     const withinChunkOffset = offset - this.chunkRanges[chunkIndex].start
 
