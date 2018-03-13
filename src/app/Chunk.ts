@@ -58,7 +58,12 @@ export class Chunk {
    * Lazily decode the audio
    */
   private async getAudioBuffer (): Promise<AudioBuffer> {
-    this.audioBuffer = this.audioBuffer || await this.audioContext.decodeAudioData(this.arrayBuffer)
+
+    // Array buffers can only be decoded once (https://github.com/WebAudio/web-audio-api/issues/1175#issuecomment-320496770).
+    // Copy the buffer before decoding to ensure nothing breaks if we later stop and re-start this chunk.
+    const copiedArrayBuffer = this.arrayBuffer.slice(0)
+
+    this.audioBuffer = this.audioBuffer || await this.audioContext.decodeAudioData(copiedArrayBuffer)
     return this.audioBuffer
   }
 
@@ -66,6 +71,7 @@ export class Chunk {
    * Inspired by https://github.com/goldfire/howler.js/blob/master/src/howler.core.js#L1965
    */
   private cleanBuffer () {
+    this.audioBuffer = undefined
     if (this.source) {
       const scratchBuffer = this.audioContext.createBuffer(1, 1, 22050);
       this.source.onended = null;
