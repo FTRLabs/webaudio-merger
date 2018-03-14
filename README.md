@@ -8,6 +8,8 @@ This project was generated with [Angular CLI](https://github.com/angular/angular
 
 ## Running locally
 
+Requires node v6.11.2 (indirectly required by `angular-audio-context` dependency).
+
 Generate an SSL cert-key pair (or use an existing one if you prefer):
 ```
 openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout key.pem -out certificate.pem
