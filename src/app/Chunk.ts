@@ -3,12 +3,13 @@
  */
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
+// import { AudioContext } from 'angular-audio-context'
 
 export class Chunk {
 
-  ended: Observable<MediaStreamErrorEvent>
+  ended: Observable<Event>
 
-  private endedSubject: Subject<MediaStreamErrorEvent> = new Subject<MediaStreamErrorEvent>()
+  private endedSubject: Subject<Event> = new Subject<Event>()
   private audioBuffer: AudioBuffer | undefined
   private source: AudioBufferSourceNode | undefined
   private destination: AudioNode | undefined
@@ -17,7 +18,8 @@ export class Chunk {
     // TODO: not sure if this is the right spot
     readonly durationSeconds: number,
     private readonly arrayBuffer: ArrayBuffer,
-    private audioContext: AudioContext
+    private audioContext: AudioContext,
+    private readonly index: number // TODO: this is just for debugging
   ) {
     this.ended = this.endedSubject.asObservable()
   }
@@ -32,12 +34,12 @@ export class Chunk {
     source.connect(this.destination)
 
     source.onended = async event => {
-      console.log(`--> chunk ended`, event)
+      console.log(`--> chunk ${this.index} ended`, event)
       this.cleanBuffer()
       this.endedSubject.next(event)
     }
 
-    console.log(`--> starting chunk at ${when}, from ${offset}`)
+    console.log(`--> starting chunk ${this.index} at ${when}, from ${offset}`)
     source.start(when, offset)
 
     this.source = source
@@ -63,7 +65,9 @@ export class Chunk {
     // Copy the buffer before decoding to ensure nothing breaks if we later stop and re-start this chunk.
     const copiedArrayBuffer = this.arrayBuffer.slice(0)
 
-    this.audioBuffer = this.audioBuffer || await this.audioContext.decodeAudioData(copiedArrayBuffer)
+    this.audioBuffer = this.audioBuffer || (
+      console.log(`--> decoding chunk ${this.index}`) || await this.audioContext.decodeAudioData(copiedArrayBuffer)
+    )
     return this.audioBuffer
   }
 
@@ -71,6 +75,7 @@ export class Chunk {
    * Inspired by https://github.com/goldfire/howler.js/blob/master/src/howler.core.js#L1965
    */
   private cleanBuffer () {
+    console.log(`--> cleared buffer for chunk ${this.index}`)
     this.audioBuffer = undefined
     if (this.source) {
       const scratchBuffer = this.audioContext.createBuffer(1, 1, 22050);

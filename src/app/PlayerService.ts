@@ -7,6 +7,7 @@ import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { Injectable } from '@angular/core'
+// import { AudioContext } from 'angular-audio-context'
 
 /**
  * To ensure channels are synchronized (even in the context of variable processing delay per channel),
@@ -38,6 +39,7 @@ export class PlayerService {
     private readonly trmService: TrmService,
     private readonly audioContext: AudioContext
   ) {
+    console.log(`--> Created playerservice with audiocontext:`, audioContext)
     this.gainNodes = this.gainNodeSubject.asObservable()
     this.durationSeconds = this.durationSecondsSubject.asObservable()
   }
@@ -85,9 +87,9 @@ export class PlayerService {
   }
 
   private createChunks (channelIndex: number): Promise<Chunk>[] {
-    return this.trms.map(async trm => {
+    return this.trms.map(async (trm, index) => {
       const arrayBuffer = await this.trmService.download(trm, channelIndex)
-      return new Chunk(trm.durationSeconds, arrayBuffer, this.audioContext)
+      return new Chunk(trm.durationSeconds, arrayBuffer, this.audioContext, index)
     })
   }
 }
