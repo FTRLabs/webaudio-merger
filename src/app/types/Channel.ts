@@ -14,7 +14,7 @@ export class Channel {
 
   private chunks: Chunk[] = []
   private chunkRanges: ChunkRange[] = []
-  private chunkEndedSubscription: Subscription | undefined
+  private chunkEndedSubscriptions: Subscription[] = []
 
   constructor (
     readonly gain: GainNode
@@ -53,37 +53,39 @@ export class Channel {
     this.chunks.forEach(c => c.stop())
 
     const chunk = this.chunks[chunkIndex]
-    this.playNextChunkOnEnd(chunkIndex)
+    this.playNextChunksOnEnd(chunkIndex)
     await chunk.start(when, withinChunkOffset)
   }
 
   stop () {
-    this.clearChunkEndedSubscription()
+    this.clearChunkEndedSubscriptions()
     this.chunks.forEach(c => c.stop())
   }
 
-  private playNextChunkOnEnd (chunkIndex: number) {
-    this.clearChunkEndedSubscription()
+  private playNextChunksOnEnd (firstChunkIndex: number) {
+    this.clearChunkEndedSubscriptions()
 
-    const chunk = this.chunks[chunkIndex]
-    const nextChunk = this.chunks[chunkIndex + 1]
+    for (let index = firstChunkIndex; index < this.chunks.length - 2; index = index + 1) {
 
-    if (nextChunk) {
-      this.chunkEndedSubscription = chunk.ended.subscribe(e => {
+      const chunk = this.chunks[index]
+      const nextChunk = this.chunks[index + 1]
+      console.log(`--> when chunk ${index} ends, will start chunk ${index + 1}`)
+      this.chunkEndedSubscriptions.push(chunk.ended.subscribe(e => {
           // TODO: synchronize with other channels! Only possible if we're willing to have a pessimistic gap at TRM boundaries?
-          console.log(`--> Attempt start chunk ${chunkIndex + 1}`, e)
+          console.log(`--> Attempt start chunk ${firstChunkIndex + 1}`, e)
           nextChunk.start(0, 0)
         }, error => {
-          console.log(`--> Failed to start chunk ${chunkIndex + 1}:`, error)
+          console.log(`--> Failed to start chunk ${firstChunkIndex + 1}:`, error)
         }
-      )
+      ))
     }
   }
 
-  private clearChunkEndedSubscription () {
-    if (this.chunkEndedSubscription) {
-      this.chunkEndedSubscription.unsubscribe()
-      this.chunkEndedSubscription = undefined
+  private clearChunkEndedSubscriptions () {
+    if (this.chunkEndedSubscriptions) {
+      console.log(`--> cleared chunkEndedSubscription`)
+      this.chunkEndedSubscriptions.forEach(s => s.unsubscribe())
+      this.chunkEndedSubscriptions = []
     }
   }
 }
