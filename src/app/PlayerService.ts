@@ -1,5 +1,5 @@
 import { Recording } from './types/Recording'
-import { Channel } from './types/Channel'
+import { Channel } from './Channel'
 import { Trm } from './types/Trm'
 import { TrmService } from './TrmService'
 import { Chunk } from './Chunk'

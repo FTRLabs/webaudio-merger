@@ -1,4 +1,4 @@
-import { Chunk } from '../Chunk'
+import { Chunk } from './Chunk'
 import { Observable } from 'rxjs/Observable'
 import { Subscription } from 'rxjs/Subscription'
 
