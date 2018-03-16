@@ -64,7 +64,7 @@ const dummyTrms = [
   "MA-BAR-BAR-CH2-C1-R1--SUPE_20160914-1401_01d20e9084b43dd0_060"
 ]
 
-// TODO: assume we can get this from server.
+// TODO LATER: get this from server.
 // Manually worked out this time, using these two commands:
 // $ ffmpeg -i <in>.aac <out>.wav
 // $ ffprobe -loglevel fatal -print_format json -show_format <out>.wav
@@ -134,7 +134,7 @@ const durations = [
 
 export const SPLIT_DUMMY_RECORDING: Recording = {
   numberOfChannels: 8,
-  trms: dummyTrms.map((dummyTrm, index) => ({
+  trmSlices: dummyTrms.map((dummyTrm, index) => ({
     name: dummyTrm,
     durationSeconds: durations[index]
   }))

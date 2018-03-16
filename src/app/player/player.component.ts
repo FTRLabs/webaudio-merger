@@ -27,11 +27,11 @@ export class PlayerComponent implements OnInit {
     this.gainNodes = this.playerService.gainNodes
     this.durationSeconds = this.playerService.durationSeconds
 
-    this.playerService.play()
+    await this.playerService.play()
   }
 
-  play() {
-    this.playerService.play()
+  async play(): Promise<void> {
+    await this.playerService.play()
   }
 
   stop() {

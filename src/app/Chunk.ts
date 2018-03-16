@@ -13,73 +13,84 @@ export class Chunk {
   private endedSubject: Subject<Event> = new Subject<Event>()
   private audioBuffer: AudioBuffer | undefined
   private source: AudioBufferSourceNode | undefined
-  private destination: AudioNode | undefined
+
+  private loading: Promise<void> | undefined
 
   constructor (
-    // TODO: not sure if this is the right spot
-    readonly durationSeconds: number,
     private readonly arrayBuffer: ArrayBuffer,
     private audioContext: AudioContext,
-
-    // TODO: these are just for debugging
+    private readonly destination: AudioNode,
     private readonly trmName: string,
-    private readonly index: number
+    // TODO LATER: remove this, they're just for debugging
+    private readonly sliceIndex: number,
+    private readonly channelIndex: number
   ) {
     this.ended = this.endedSubject.asObservable()
   }
 
-  async start (when?: number, offset?: number): Promise<void> {
-
-    // Always create a new AudioBufferSourceNode, as they can only be `start`ed once each
-    const source = this.audioContext.createBufferSource()
-
-    source.buffer = await this.getAudioBuffer()
-
-    source.connect(this.destination)
-
-    source.onended = async event => {
-      console.log(`--> chunk ${this.index} ended (${this.trmName})`, event)
-      this.cleanBuffer()
-      this.endedSubject.next(event)
+  // TODO LATER: lazy download of arrayBuffer
+  async load (): Promise<void> {
+    if (this.loading) {
+      return this.loading
+    } else {
+      this.loading = this.doLoad()
+      return this.loading
     }
-
-    console.log(`--> starting chunk ${this.index} at ${when}, from ${offset} (${this.trmName})`)
-    source.start(when, offset)
-
-    this.source = source
   }
 
-  connect (node: AudioNode) {
-    this.destination = node
+  start (when?: number, offset?: number): void {
+    if (!this.source) {
+      throw new Error('Cannot start chunk before loaded')
+    }
+
+    console.log(`--> starting chunk ${this.sliceIndex}/ch${this.channelIndex} at ${when}, from ${offset} (${this.trmName})`)
+
+    this.source.start(when, offset)
   }
 
   stop (): void {
     if (this.source) {
       this.source.stop()
-      this.cleanBuffer()
     }
+    this.unload()
   }
 
-  /**
-   * Lazily decode the audio
-   */
-  private async getAudioBuffer (): Promise<AudioBuffer> {
+  private async doLoad (): Promise<void> {
+    this.audioBuffer = await this.decode()
 
+    // Always create a new AudioBufferSourceNode, as they can only be `start`ed once each
+    const source = this.audioContext.createBufferSource()
+
+    source.buffer = this.audioBuffer
+
+    source.connect(this.destination)
+
+    source.onended = async event => {
+      console.log(`--> chunk ${this.sliceIndex}/ch${this.channelIndex} ended (${this.trmName})`, event)
+      this.unload()
+      this.endedSubject.next(event)
+    }
+
+    this.source = source
+  }
+
+  private async decode (): Promise<AudioBuffer> {
     // Array buffers can only be decoded once (https://github.com/WebAudio/web-audio-api/issues/1175#issuecomment-320496770).
     // Copy the buffer before decoding to ensure nothing breaks if we later stop and re-start this chunk.
     const copiedArrayBuffer = this.arrayBuffer.slice(0)
 
-    this.audioBuffer = this.audioBuffer || (
-      console.log(`--> decoding chunk ${this.index} (${this.trmName})`) || await this.audioContext.decodeAudioData(copiedArrayBuffer)
-    )
-    return this.audioBuffer
+    console.log(`--> decoding chunk ${this.sliceIndex}/ch${this.channelIndex} (${this.trmName})`)
+    return await this.audioContext.decodeAudioData(copiedArrayBuffer)
   }
 
   /**
    * Inspired by https://github.com/goldfire/howler.js/blob/master/src/howler.core.js#L1965
    */
-  private cleanBuffer () {
-    console.log(`--> cleared buffer for chunk ${this.index} (${this.trmName})`)
+  private unload (): void {
+
+    this.loading = undefined
+
+    console.log(`--> cleared buffer for chunk ${this.sliceIndex}/ch${this.channelIndex} (${this.trmName})`)
     this.audioBuffer = undefined
     if (this.source) {
       const scratchBuffer = this.audioContext.createBuffer(1, 1, 22050);

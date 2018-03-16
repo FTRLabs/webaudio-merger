@@ -16,9 +16,10 @@ export const durationSeconds = 60
 
 export const SPLIT_DUMMY_RECORDING: Recording = {
   numberOfChannels: 8,
-  trms: flattenedTrmChunkNames.slice(0, 50).map(dummyTrm => ({
+  trmSlices: flattenedTrmChunkNames.slice(0, 50).map(dummyTrm => ({
     name: dummyTrm,
-    // TODO: assume this is available from the server; this is approximate here, which will just make seeking a bit inaccurate
+    // TODO LATER: get this from the server
+    // TODO: use accurate durations, as now this is used to queue subsequent slices
     durationSeconds
   }))
 }

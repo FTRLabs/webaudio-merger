@@ -1,6 +1,6 @@
-import { Trm } from './Trm'
+import { TrmSlice } from './Trm'
 
 export interface Recording {
   numberOfChannels: number
-  trms: Trm[]
+  trmSlices: TrmSlice[]
 }

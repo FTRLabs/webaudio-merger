@@ -25,10 +25,10 @@ export const DUMMY_TRM_NAMES = [
 
 export const DUMMY_RECORDING: Recording = {
   numberOfChannels: 1,
-  trms: DUMMY_TRM_NAMES.slice(0, 2).map(trmName => ({
+  trmSlices: DUMMY_TRM_NAMES.slice(0, 2).map(trmName => ({
     name: trmName,
 
-    // TODO: assume we can get this from server.
+    // TODO LATER: get this from server.
     // Manually worked out this time, using these two commands:
     // $ ffmpeg -i <in>.aac <out>.wav
     // $ ffprobe -loglevel fatal -print_format json -show_format <out>.wav
