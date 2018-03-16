@@ -11,7 +11,7 @@ export class TrmService {
 
   download (trm: Trm, index: number): Promise<ArrayBuffer> {
     return this.fileService.download(
-      `./assets/audio/${trm.name}_ch${index + 1}.aac`
+      `./assets/mp4/${trm.name}.mp4`
     )
   }
 }

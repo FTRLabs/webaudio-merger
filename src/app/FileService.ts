@@ -4,6 +4,7 @@ import { Injectable } from '@angular/core'
 export class FileService {
 
   download (path: string): Promise<ArrayBuffer> {
+    console.log(path)
     return new Promise<ArrayBuffer>(resolve => {
       const request = new XMLHttpRequest()
       request.open('GET', path, true)

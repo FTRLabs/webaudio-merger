@@ -1,18 +1,14 @@
 <div>
-  Channels:
-  <div *ngFor="let gainNode of gainNodes | async; let index = index">
-    <label>{{index}}</label>
-    <input
-      type="range"
-      min="0"
-      max="10"
-      value="5"
-      (change)="setGain(gainNode, $event.target.value)"
-    />
-  </div>
+  <div>Duration: {{durationSeconds | async}}</div>
+  <div>Current Time: {{currentTimeSeconds}}</div>
   Seek:
   <mat-slider class="player__seek" [max]="durationSeconds | async" [value]="currentTimeSeconds"
               (change)="changeTime($event.value)"></mat-slider>
+
+  <div class="trm-end"></div>
+
+  <audio #audio1></audio>
+  <audio #audio2></audio>
 
   <button (click)="play()">Play</button>
   <button (click)="stop()">Stop</button>

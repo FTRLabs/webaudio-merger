@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core'
 import { DUMMY_RECORDING } from '../DummyRecording'
 import { PlayerService } from '../PlayerService'
 import { Observable } from 'rxjs/Observable'
@@ -9,6 +9,8 @@ import { Observable } from 'rxjs/Observable'
   styleUrls: ['./player.component.css']
 })
 export class PlayerComponent implements OnInit {
+  @ViewChild('audio1') audio: ElementRef
+  @ViewChild('audio2') audio2: ElementRef
 
   gainNodes: Observable<GainNode[]>
   durationSeconds: Observable<number>
@@ -20,11 +22,12 @@ export class PlayerComponent implements OnInit {
   }
 
   async ngOnInit () {
-
+    this.playerService.setAudio(this.audio.nativeElement)
+    this.playerService.setOtherAudio(this.audio2.nativeElement)
     await this.playerService.load(DUMMY_RECORDING)
 
-    this.gainNodes = this.playerService.gainNodes
     this.durationSeconds = this.playerService.durationSeconds
+    this.playerService.time.subscribe(time => this.currentTimeSeconds = time)
 
     this.playerService.play()
   }

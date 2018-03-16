@@ -7,7 +7,6 @@ import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { Injectable } from '@angular/core'
-// import { AudioContext } from 'angular-audio-context'
 
 /**
  * To ensure channels are synchronized (even in the context of variable processing delay per channel),
@@ -17,18 +16,18 @@ const MAX_EXPECTED_DECODE_DELAY_SEC = 2
 
 @Injectable()
 export class PlayerService {
-
-  gainNodes: Observable<GainNode[]>
+  audio: HTMLAudioElement
+  otherAudio: HTMLAudioElement
   durationSeconds: Observable<number>
+  time: Observable<number>
 
-  // TODO: calculate current time (e.g. this.audioContext.currentTime - this.playStart); keep track of pause, seek, etc
-  currentTimeSeconds: number | undefined
-
-  private gainNodeSubject: Subject<GainNode[]> = new ReplaySubject<GainNode[]>()
   private durationSecondsSubject: Subject<number> = new ReplaySubject<number>()
+  private timeSubject: Subject<number> = new ReplaySubject<number>()
   private numberOfChannels: number | undefined
   private trms: Trm[] = []
-  private channels: Channel[] = []
+  private buffers: ArrayBuffer[]
+  private index = 0
+  private offset = 0
 
   /**
    * Indexed by channel, then sequence
@@ -36,60 +35,110 @@ export class PlayerService {
   private chunks: Chunk[][]
 
   constructor (
-    private readonly trmService: TrmService,
-    private readonly audioContext: AudioContext
+    private readonly trmService: TrmService
   ) {
-    console.log(`--> Created playerservice with audiocontext:`, audioContext)
-    this.gainNodes = this.gainNodeSubject.asObservable()
+    console.log(`--> Created playerservice`)
     this.durationSeconds = this.durationSecondsSubject.asObservable()
+    this.time = this.timeSubject.asObservable()
   }
 
   async load (recording: Recording): Promise<void> {
     this.numberOfChannels = recording.numberOfChannels
     this.trms = recording.trms
+    this.buffers = await Promise.all(this.createBuffers())
 
-    // Download all chunks across all channels (but don't decode yet); TODO: lazy download
-    this.channels = await Promise.all(
-      indexes(this.numberOfChannels)
-        .map(() => this.createChannel())
-        .map(async (channel, channelIndex) => {
-          const chunks = await Promise.all(this.createChunks(channelIndex))
-          channel.load(chunks)
-          return channel
-        }))
-
-    // Assumes all channels have the same duration
-    this.durationSecondsSubject.next(this.channels[0].duration)
-    this.gainNodeSubject.next(this.channels.map(c => c.gain))
+    const duration = this.trms.reduce((previous, trm) => {
+      return previous + trm.durationSeconds
+    }, 0)
+    this.durationSecondsSubject.next(duration)
+    this.loadSegment(this.index)
+    this.loadOtherSegment(this.index + 1)
   }
 
-  play (): void {
-    const syncStart = this.audioContext.currentTime + MAX_EXPECTED_DECODE_DELAY_SEC
-    console.log(`--> Will start all channels at ${syncStart}`)
-    this.channels.forEach(c => c.start(syncStart))
+  loadOtherSegment (index: number): void {
+    this.otherAudio.src = URL.createObjectURL(new Blob([this.buffers[index]], {type: 'audio/mp4'}))
+    this.otherAudio.load()
+  }
+
+  loadSegment (index: number): void {
+    let offset = 0
+    let i = 0
+    while (i < index) {
+      offset += this.trms[i].durationSeconds
+      i++
+    }
+    console.log(`offset: ${offset}`)
+    this.offset = offset
+    this.audio.src = URL.createObjectURL(new Blob([this.buffers[index]], {type: 'audio/mp4'}))
+  }
+
+  setAudio (audio: HTMLAudioElement): void {
+    this.audio = audio
+    this.audio.ontimeupdate = this.handleTimeEvent.bind(this)
+    this.audio.onended = this.onEnded.bind(this)
+  }
+
+  setOtherAudio (audio: HTMLAudioElement): void {
+    this.otherAudio = audio
+    this.otherAudio.ontimeupdate = this.handleTimeEvent.bind(this)
+  }
+
+  onEnded (): void {
+    this.index++
+    this.loadSegment(this.index)
+    this.play(0)
+  }
+
+  handleTimeEvent (): void {
+    this.timeSubject.next(this.audio.currentTime + this.offset)
+  }
+
+  play (time?: number): void {
+    console.log(`--> Will play`)
+    this.audio.play()
+    console.log(`play`)
+    if (time) {
+      console.log(`time ${time}`)
+      if (this.audio.readyState === 0) {
+        this.audio.addEventListener('loadedmetadata', function() {
+          this.audio.currentTime = time
+        }.bind(this), false)
+      } else {
+        this.audio.currentTime = time
+      }
+    }
   }
 
   stop (): void {
-    this.channels.forEach(c => c.stop())
+    console.log(`--> Stop`)
+    this.audio.pause()
+    this.index = 0
+    this.loadSegment(0)
   }
 
   updateTime (seconds: number) {
-    const syncStart = this.audioContext.currentTime + MAX_EXPECTED_DECODE_DELAY_SEC
-    console.log(`--> Will start all channels at ${syncStart}`)
-    this.channels.forEach(c => c.start(syncStart, seconds))
+    console.log(`--> Will start at ${seconds}`)
+    let offset = 0
+    let index = 0
+    let trm = this.trms[index]
+    while (seconds > offset + trm.durationSeconds) {
+      offset += trm.durationSeconds
+      index++
+      trm = this.trms[index]
+      console.log(`index ${index}`)
+      console.log(`offset ${offset}`)
+    }
+    if (index !== this.index) {
+      this.index = index
+      this.loadSegment(index)
+    }
+
+    this.play(seconds - offset)
   }
 
-  private createChannel (): Channel {
-    const channel = new Channel(this.audioContext.createGain())
-    channel.gain.connect(this.audioContext.destination)
-    channel.gain.gain.value = .5
-    return channel
-  }
-
-  private createChunks (channelIndex: number): Promise<Chunk>[] {
+  private createBuffers (): Promise<ArrayBuffer>[] {
     return this.trms.map(async (trm, index) => {
-      const arrayBuffer = await this.trmService.download(trm, channelIndex)
-      return new Chunk(trm.durationSeconds, arrayBuffer, this.audioContext, index)
+      return await this.trmService.download(trm, 0)
     })
   }
 }

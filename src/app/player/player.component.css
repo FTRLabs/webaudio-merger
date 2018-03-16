@@ -1,3 +1,13 @@
 .player__seek {
-  width: 100%;
+  display: block;
+  width: 1200px;
+}
+
+.trm-end {
+  height: 50px;
+  width: 1px;
+  background: red;
+  position: absolute;
+  top: 150px;
+  left: 607px;
 }
