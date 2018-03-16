@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { DUMMY_RECORDING } from '../DummyRecording'
 import { PlayerService } from '../PlayerService'
 import { Observable } from 'rxjs/Observable'
+import { SPLIT_DUMMY_RECORDING } from '../SplitDummyRecording.60'
 
 @Component({
   selector: 'app-player',
@@ -21,7 +21,8 @@ export class PlayerComponent implements OnInit {
 
   async ngOnInit () {
 
-    await this.playerService.load(DUMMY_RECORDING)
+    // await this.playerService.load(DUMMY_RECORDING)
+    await this.playerService.load(SPLIT_DUMMY_RECORDING)
 
     this.gainNodes = this.playerService.gainNodes
     this.durationSeconds = this.playerService.durationSeconds

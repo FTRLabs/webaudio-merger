@@ -49,5 +49,5 @@ src/assets/audio/*
 # keys
 *.pem
 src/assets/trm/*
-src/assets/split_audio/*
-tmp/*
+src/assets/*audio*
+*tmp*

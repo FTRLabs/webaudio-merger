@@ -65,7 +65,8 @@ export class Channel {
   private playNextChunksOnEnd (firstChunkIndex: number) {
     this.clearChunkEndedSubscriptions()
 
-    for (let index = firstChunkIndex; index < this.chunks.length - 2; index = index + 1) {
+    console.log(`--> playNextChunksOnEnd (from ${firstChunkIndex} to ${this.chunks.length - 3}`)
+    for (let index = firstChunkIndex; index < this.chunks.length - 1; index = index + 1) {
 
       const chunk = this.chunks[index]
       const nextChunk = this.chunks[index + 1]

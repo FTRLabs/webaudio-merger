@@ -18,7 +18,11 @@ openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout key.pem -out c
 certutil -d sql:$HOME/.pki/nssdb -A -t "CT,C,C" -n certificate.pem -i certificate.pem
 ```
 
-Extract the TRM files in [this sample recording](https://drive.google.com/open?id=1E6lWt9ol-cysOIEXU9t22wNfRgTag_4c) directly to the root of the directory `./src/assets/audio`.
+Extract the AAC files from [this sample recording](https://drive.google.com/open?id=1E6lWt9ol-cysOIEXU9t22wNfRgTag_4c) directly to the root of the directory `./src/assets/audio`, then split them into 60 second chunks as follows:
+```
+cd ./src/assets
+./split.sh 60
+``` 
 
 Run the following for a dev server:
 ```

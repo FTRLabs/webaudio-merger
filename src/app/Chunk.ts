@@ -3,6 +3,7 @@
  */
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
+
 // import { AudioContext } from 'angular-audio-context'
 
 export class Chunk {
@@ -19,7 +20,10 @@ export class Chunk {
     readonly durationSeconds: number,
     private readonly arrayBuffer: ArrayBuffer,
     private audioContext: AudioContext,
-    private readonly index: number // TODO: this is just for debugging
+
+    // TODO: these are just for debugging
+    private readonly trmName: string,
+    private readonly index: number
   ) {
     this.ended = this.endedSubject.asObservable()
   }
@@ -34,12 +38,12 @@ export class Chunk {
     source.connect(this.destination)
 
     source.onended = async event => {
-      console.log(`--> chunk ${this.index} ended`, event)
+      console.log(`--> chunk ${this.index} ended (${this.trmName})`, event)
       this.cleanBuffer()
       this.endedSubject.next(event)
     }
 
-    console.log(`--> starting chunk ${this.index} at ${when}, from ${offset}`)
+    console.log(`--> starting chunk ${this.index} at ${when}, from ${offset} (${this.trmName})`)
     source.start(when, offset)
 
     this.source = source
@@ -66,7 +70,7 @@ export class Chunk {
     const copiedArrayBuffer = this.arrayBuffer.slice(0)
 
     this.audioBuffer = this.audioBuffer || (
-      console.log(`--> decoding chunk ${this.index}`) || await this.audioContext.decodeAudioData(copiedArrayBuffer)
+      console.log(`--> decoding chunk ${this.index} (${this.trmName})`) || await this.audioContext.decodeAudioData(copiedArrayBuffer)
     )
     return this.audioBuffer
   }
@@ -75,7 +79,7 @@ export class Chunk {
    * Inspired by https://github.com/goldfire/howler.js/blob/master/src/howler.core.js#L1965
    */
   private cleanBuffer () {
-    console.log(`--> cleared buffer for chunk ${this.index}`)
+    console.log(`--> cleared buffer for chunk ${this.index} (${this.trmName})`)
     this.audioBuffer = undefined
     if (this.source) {
       const scratchBuffer = this.audioContext.createBuffer(1, 1, 22050);

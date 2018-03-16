@@ -89,7 +89,7 @@ export class PlayerService {
   private createChunks (channelIndex: number): Promise<Chunk>[] {
     return this.trms.map(async (trm, index) => {
       const arrayBuffer = await this.trmService.download(trm, channelIndex)
-      return new Chunk(trm.durationSeconds, arrayBuffer, this.audioContext, index)
+      return new Chunk(trm.durationSeconds, arrayBuffer, this.audioContext, trm.name, index)
     })
   }
 }
