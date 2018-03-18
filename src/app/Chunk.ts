@@ -39,9 +39,26 @@ export class Chunk {
   }
 
   start (when?: number, offset?: number): void {
-    if (!this.source) {
+    if (!this.audioBuffer) {
       throw new Error('Cannot start chunk before loaded')
     }
+
+    // Ensure that audio is stopped if this chunk is already playing
+    if (this.source) {
+      this.source.stop()
+    }
+
+    // Always create a new AudioBufferSourceNode, as they can only be `start`ed once each
+    const source = this.audioContext.createBufferSource()
+    source.buffer = this.audioBuffer
+    source.connect(this.destination)
+    source.onended = async event => {
+      console.log(`--> chunk ${this.sliceIndex}/ch${this.channelIndex} ended (${this.trmName})`, event)
+      this.unload()
+      this.endedSubject.next(event)
+    }
+
+    this.source = source
 
     console.log(`--> starting chunk ${this.sliceIndex}/ch${this.channelIndex} at ${when}, from ${offset} (${this.trmName})`)
 
@@ -57,21 +74,6 @@ export class Chunk {
 
   private async doLoad (): Promise<void> {
     this.audioBuffer = await this.decode()
-
-    // Always create a new AudioBufferSourceNode, as they can only be `start`ed once each
-    const source = this.audioContext.createBufferSource()
-
-    source.buffer = this.audioBuffer
-
-    source.connect(this.destination)
-
-    source.onended = async event => {
-      console.log(`--> chunk ${this.sliceIndex}/ch${this.channelIndex} ended (${this.trmName})`, event)
-      this.unload()
-      this.endedSubject.next(event)
-    }
-
-    this.source = source
   }
 
   private async decode (): Promise<AudioBuffer> {
