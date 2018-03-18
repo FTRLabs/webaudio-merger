@@ -18,6 +18,7 @@ const MAX_EXPECTED_DECODE_DELAY_SEC = 2
 export class PlayerService {
   audio: HTMLAudioElement
   otherAudio: HTMLAudioElement
+  playingAudio: HTMLAudioElement
   durationSeconds: Observable<number>
   time: Observable<number>
 
@@ -76,6 +77,7 @@ export class PlayerService {
     this.audio = audio
     this.audio.ontimeupdate = this.handleTimeEvent.bind(this)
     this.audio.onended = this.onEnded.bind(this)
+    this.playingAudio = this.audio
   }
 
   setOtherAudio (audio: HTMLAudioElement): void {
@@ -85,12 +87,20 @@ export class PlayerService {
 
   onEnded (): void {
     this.index++
-    this.loadSegment(this.index)
-    this.play(0)
+    let offset = 0
+    let i = 0
+    while (i < this.index) {
+      offset += this.trms[i].durationSeconds
+      i++
+    }
+    console.log(`offset: ${offset}`)
+    this.offset = offset
+    this.playingAudio = this.otherAudio
+    this.otherAudio.play()
   }
 
   handleTimeEvent (): void {
-    this.timeSubject.next(this.audio.currentTime + this.offset)
+    this.timeSubject.next(this.playingAudio.currentTime + this.offset)
   }
 
   play (time?: number): void {
@@ -111,7 +121,7 @@ export class PlayerService {
 
   stop (): void {
     console.log(`--> Stop`)
-    this.audio.pause()
+    this.playingAudio.pause()
     this.index = 0
     this.loadSegment(0)
   }
