@@ -32,6 +32,6 @@ export const DUMMY_RECORDING: Recording = {
     // Manually worked out this time, using these two commands:
     // $ ffmpeg -i <in>.aac <out>.wav
     // $ ffprobe -loglevel fatal -print_format json -show_format <out>.wav
-    durationSeconds: 300.094694
+    duration: 300.094694
   }))
 }

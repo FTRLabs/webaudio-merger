@@ -11,13 +11,13 @@ const trmChunkNames = DUMMY_TRM_NAMES.map(
 
 const flattenedTrmChunkNames = [].concat(...trmChunkNames)
 
-export const durationSeconds = 60
+export const duration = 60
 
 export const SPLIT_DUMMY_RECORDING: Recording = {
   numberOfChannels: 8,
   trmSlices: flattenedTrmChunkNames.map(dummyTrm => ({
     name: dummyTrm,
     // TODO LATER: get this from the server
-    durationSeconds
+    duration
   }))
 }

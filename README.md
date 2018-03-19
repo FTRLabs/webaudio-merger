@@ -2,11 +2,20 @@
 
 Just a prototype. Quick sample code on how to use WebAudio to merge multiple audio files.
 
-> Music provided by: [BESOUND](http://www.bensound.com/ "BESOUND homepage")
-
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.7.3.
+## Known issues
+- [ ] On Chrome Android, may crash after a few seeks with "Aw Snap", or killed browser 
+- [ ] Does not handle fast successive seeking to different locations. This can lead to:
+  - [ ] multiple parts of the recording playing simultaneously
+  - [ ] error in console "Cannot start chunk before loaded", or "Error decoding audio data for chunk"
+- [ ] Does not support Safari (should just need webkit prefix monkey patch or equivalent)
+- [ ] Downloads all (encoded) data up front - should be lazy/buffered
+- [ ] Does not calculate/indicate current location in recording
+- [ ] Requires server to provide: a list of around 1 min AAC files (seems more stable and faster than 5 min chunks) with corresponding durations 
+- [ ] All channels are played with identical [spatialization](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API/Web_audio_spatialization_basics), which limits clarity. Should at least use stereo.
 
 ## Running locally
+
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.7.3.
 
 Requires node v6.11.2 (indirectly required by `angular-audio-context` dependency).
 

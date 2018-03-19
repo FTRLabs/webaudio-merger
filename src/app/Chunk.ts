@@ -40,13 +40,14 @@ export class Chunk {
 
   start (offset?: number): void {
     if (!this.audioBuffer) {
-      throw new Error('Cannot start chunk before loaded')
+      throw new Error(`Cannot start chunk before loaded: ${this.sliceIndex}/ch${this.channelIndex} (${this.trmName})`)
     }
 
     // Ensure that audio is stopped if this chunk is already playing
     if (this.source) {
       const oldSource = this.source
       console.log(`--> on chunk start: stopping playing chunk in slice ${this.sliceIndex} at ${offset}`)
+
       // Suppress onended event, because with this call to stop(), the chunk hasn't ended, we're just seeking within it
       oldSource.onended = () => {
         oldSource.disconnect();
@@ -60,7 +61,7 @@ export class Chunk {
     source.connect(this.destination)
     source.onended = async event => {
       // console.log(`--> chunk in slice ${this.sliceIndex} ended (${this.trmName}); clearing buffer`, event)
-      console.log(`--> chunk in slice ${this.sliceIndex} ended; clearing buffer`)
+      console.log(`--> on chunk end: slice ${this.sliceIndex} ended; clearing buffer`)
       this.unload()
       this.endedSubject.next(event)
     }
@@ -101,7 +102,7 @@ export class Chunk {
     try {
       return await this.audioContext.decodeAudioData(copiedArrayBuffer)
     } catch (err) {
-      console.log(`--> Error decoding audio data for chunk in slice ${this.sliceIndex} (${this.trmName})`, err)
+      console.log(`--> error decoding audio data for chunk ${this.sliceIndex}/ch${this.channelIndex} (${this.trmName})`, err)
       throw err
     }
   }

@@ -136,6 +136,6 @@ export const SPLIT_DUMMY_RECORDING: Recording = {
   numberOfChannels: 8,
   trmSlices: dummyTrms.map((dummyTrm, index) => ({
     name: dummyTrm,
-    durationSeconds: durations[index]
+    duration: durations[index]
   }))
 }

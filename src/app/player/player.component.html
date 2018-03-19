@@ -11,7 +11,7 @@
     />
   </div>
   Seek:
-  <mat-slider class="player__seek" [max]="durationSeconds | async" [value]="currentTimeSeconds"
+  <mat-slider class="player__seek" [max]="duration | async" [value]="currentTimeSeconds"
               (change)="changeTime($event.value)"></mat-slider>
 
   <button (click)="play()">Play</button>

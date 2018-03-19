@@ -27,24 +27,23 @@ interface SliceEndedEvent extends Event {
 export class PlayerService {
 
   gainNodes: Observable<GainNode[]>
-  durationSeconds: Observable<number>
+  duration: Observable<number>
 
   // TODO LATER: calculate current time (e.g. this.audioContext.currentTime - this.playStart); keep track of pause, seek, etc
   currentTimeSeconds: number | undefined
 
   private gainNodeSubject: Subject<GainNode[]> = new ReplaySubject<GainNode[]>()
-  private durationSecondsSubject: Subject<number> = new ReplaySubject<number>()
+  private durationSubject: Subject<number> = new ReplaySubject<number>()
   private channels: Channel[] = []
   private slices: Slice[] = []
   private sliceRanges: SliceRange[] = []
-  private sliceEndedSubscription: Subscription
 
   constructor (
     private readonly trmService: TrmService,
     private readonly audioContext: AudioContext
   ) {
     this.gainNodes = this.gainNodeSubject.asObservable()
-    this.durationSeconds = this.durationSecondsSubject.asObservable()
+    this.duration = this.durationSubject.asObservable()
   }
 
   async load (recording: Recording): Promise<void> {
@@ -63,35 +62,14 @@ export class PlayerService {
     }))
 
     const sliceEnded = Observable
-      .merge(...this.slices.map((slice, sliceIndex) => slice.ended.map((event: Event) => ({ ...event, sliceIndex }))))
+      .merge(...this.slices.map((slice, sliceIndex) => slice.ended.map(event => ({ ...event, sliceIndex }))))
 
     // TODO LATER: unsubscribe on next load
-    sliceEnded.subscribe(async (event: SliceEndedEvent) => {
-        const nextSlice = this.slices[event.sliceIndex + 1]
-        if (nextSlice) {
-          console.log(`--> on slice ended: slice ${event.sliceIndex + 1}: auto-playing`, nextSlice)
-          await nextSlice.start()
-          console.log(`--> on slice ended: slice ${event.sliceIndex + 1}: auto-played`, nextSlice)
-        }
-      },
-      error => {
-        console.log(`--> on slice ended: could not auto-play slice`, error)
-      })
-
-    sliceEnded.subscribe(async (event: SliceEndedEvent) => {
-        const sliceToLoad = this.slices[event.sliceIndex + 2]
-        if (sliceToLoad) {
-          console.log(`--> on slice ended: auto-loading slice ${event.sliceIndex + 2}`, sliceToLoad)
-          await sliceToLoad.load()
-          console.log(`--> on slice ended: auto-loaded slice ${event.sliceIndex + 2}`, sliceToLoad)
-        }
-      },
-      error => {
-        console.log(`--> on slice ended: could not auto-load slice`, error)
-      })
+    sliceEnded.subscribe(event => this.startNextSlice(event), error => console.log(`--> on slice ended: could not auto-play slice`, error))
+    sliceEnded.subscribe(event => this.loadUpcomingSlice(event), error => console.log(`--> on slice ended: could not auto-load slice`, error))
 
     this.sliceRanges = calculateSliceRanges(recording.trmSlices)
-    this.durationSecondsSubject.next(sum(recording.trmSlices, t => t.durationSeconds))
+    this.durationSubject.next(sum(recording.trmSlices, t => t.duration))
     this.gainNodeSubject.next(this.channels.map(c => c.gain))
   }
 
@@ -104,7 +82,7 @@ export class PlayerService {
     this.slices.forEach(c => c.stop())
   }
 
-  // TODO LATER: maybe map this, play and stop through Rx with switchmap or something, to debounce/abort/etc
+  // TODO LATER: maybe map updateTime, play and stop through Rx with switchmap or something, to debounce/abort/etc
   updateTime (seconds: number): Promise<void> {
     return this.start(seconds)
   }
@@ -126,6 +104,24 @@ export class PlayerService {
         slice.stop()
       }
     }))
+  }
+
+  private async startNextSlice (event: SliceEndedEvent): Promise<void> {
+    const nextSlice = this.slices[event.sliceIndex + 1]
+    if (nextSlice) {
+      console.log(`--> on slice ended: slice ${event.sliceIndex + 1}: auto-playing`, nextSlice)
+      await nextSlice.start()
+      console.log(`--> on slice ended: slice ${event.sliceIndex + 1}: auto-played`, nextSlice)
+    }
+  }
+
+  private async loadUpcomingSlice (event: SliceEndedEvent): Promise<void> {
+    const sliceToLoad = this.slices[event.sliceIndex + 2]
+    if (sliceToLoad) {
+      console.log(`--> on slice ended: auto-loading slice ${event.sliceIndex + 2}`, sliceToLoad)
+      await sliceToLoad.load()
+      console.log(`--> on slice ended: auto-loaded slice ${event.sliceIndex + 2}`, sliceToLoad)
+    }
   }
 
   private findSlice (offset: number): SlicePosition {
@@ -163,7 +159,7 @@ function calculateSliceRanges (trmSlices: TrmSlice[]): SliceRange[] {
   let cumulativeOffset = 0
   return trmSlices.map(t => {
     const start = cumulativeOffset
-    cumulativeOffset = cumulativeOffset + t.durationSeconds
+    cumulativeOffset = cumulativeOffset + t.duration
     return { start, end: cumulativeOffset }
   })
 }
