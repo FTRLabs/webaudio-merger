@@ -7,15 +7,20 @@ import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { ReplaySubject } from 'rxjs/ReplaySubject'
 import { Injectable } from '@angular/core'
-import { Slice, SliceEvent, SliceStartedEvent } from './Slice'
+import { Slice } from './Slice'
 // import { AudioContext } from 'angular-audio-context'
 import 'rxjs/add/observable/merge'
 import 'rxjs/add/operator/map'
+import 'rxjs/add/operator/filter'
 import { Subscription } from 'rxjs/Subscription'
 
 interface SlicePosition {
   sliceIndex: number,
   sliceOffset: number
+}
+
+interface SliceEndedEvent extends Event {
+  sliceIndex: number
 }
 
 @Injectable()
@@ -32,13 +37,12 @@ export class PlayerService {
   private channels: Channel[] = []
   private slices: Slice[] = []
   private sliceRanges: SliceRange[] = []
-  private sliceEventsSubscription: Subscription
+  private sliceEndedSubscription: Subscription
 
   constructor (
     private readonly trmService: TrmService,
     private readonly audioContext: AudioContext
   ) {
-    console.log(`--> Created playerservice with audiocontext:`, audioContext)
     this.gainNodes = this.gainNodeSubject.asObservable()
     this.durationSeconds = this.durationSecondsSubject.asObservable()
   }
@@ -55,27 +59,36 @@ export class PlayerService {
         const arrayBuffer = await this.trmService.download(trmSlice, channelIndex)
         return new Chunk(arrayBuffer, this.audioContext, this.channels[channelIndex].gain, trmSlice.name, sliceIndex, channelIndex)
       }))
-      return new Slice(chunks, this.audioContext)
+      return new Slice(chunks, sliceIndex)
     }))
 
-    this.sliceEventsSubscription = Observable
-      .merge(...this.slices.map((slice, sliceIndex) => slice.events.map(event => ({ ...event, sliceIndex }))))
-      .subscribe(async event => {
-          console.log(`--> Got slice event:`, event)
-          if (event instanceof SliceStartedEvent) {
-            const nextSlice = this.slices[event.sliceIndex + 1]
-            if (nextSlice) {
-              // When a slice has started playing, queue next slice to play (with offset)
-              const startedSliceDuration = recording.trmSlices[event.sliceIndex].durationSeconds
-              const startNextSliceAt = event.ctxStartedAtTime + startedSliceDuration - event.offset
-              console.log(`--> Enqueuing next slice`, nextSlice, startNextSliceAt)
-              await nextSlice.start(startNextSliceAt)
-            }
-          }
-        },
-        error => {
-          console.log(`--> Could not enqueue next slice:`, error)
-        })
+    const sliceEnded = Observable
+      .merge(...this.slices.map((slice, sliceIndex) => slice.ended.map((event: Event) => ({ ...event, sliceIndex }))))
+
+    // TODO LATER: unsubscribe on next load
+    sliceEnded.subscribe(async (event: SliceEndedEvent) => {
+        const nextSlice = this.slices[event.sliceIndex + 1]
+        if (nextSlice) {
+          console.log(`--> on slice ended: slice ${event.sliceIndex + 1}: auto-playing`)
+          await nextSlice.start()
+          console.log(`--> on slice ended: slice ${event.sliceIndex + 1}: auto-played`)
+        }
+      },
+      error => {
+        console.log(`--> on slice ended: could not auto-play slice`, error)
+      })
+
+    sliceEnded.subscribe(async (event: SliceEndedEvent) => {
+        const sliceToLoad = this.slices[event.sliceIndex + 2]
+        if (sliceToLoad) {
+          console.log(`--> on slice ended: auto-loading slice ${event.sliceIndex + 2}`)
+          await sliceToLoad.load()
+          console.log(`--> on slice ended: auto-loaded slice ${event.sliceIndex + 2}`)
+        }
+      },
+      error => {
+        console.log(`--> on slice ended: could not auto-load slice`, error)
+      })
 
     this.sliceRanges = calculateSliceRanges(recording.trmSlices)
     this.durationSecondsSubject.next(sum(recording.trmSlices, t => t.durationSeconds))
@@ -87,6 +100,7 @@ export class PlayerService {
   }
 
   stop (): void {
+    console.log(`--> on stop: stopping all slices`)
     this.slices.forEach(c => c.stop())
   }
 
@@ -99,9 +113,16 @@ export class PlayerService {
     const slicePosition = this.findSlice(offset)
     await Promise.all(this.slices.map(async (slice, sliceIndex) => {
       if (sliceIndex === slicePosition.sliceIndex) {
-        await slice.start(0, slicePosition.sliceOffset)
+        console.log(`--> on start: slice ${sliceIndex}: play at offset ${slicePosition.sliceOffset}`)
+        await slice.start(slicePosition.sliceOffset)
+        console.log(`--> on start: slice ${sliceIndex}: playing at offset ${slicePosition.sliceOffset}`)
+      } else if (sliceIndex === slicePosition.sliceIndex + 1) {
+        console.log(`--> on start: slice ${sliceIndex}: load`)
+        await slice.load()
+        console.log(`--> on start: slice ${sliceIndex}: loaded`)
       } else {
         // Note: this ensures other slices and their chunks stop, and release their memory
+        console.log(`--> on start: slice other: stop`)
         slice.stop()
       }
     }))
@@ -112,9 +133,9 @@ export class PlayerService {
     const sliceIndex = this.sliceRanges.findIndex(r => (offset || 0) >= r.start && (offset || 0) < r.end)
 
     if (sliceIndex < 0) {
-      throw new RangeError(`Could not find slice corresponding to offset: ${offset}`)
+      throw new RangeError(`--> on start: could not find slice corresponding to offset: ${offset}`)
     }
-    console.log(`--> playing chunk ${sliceIndex} (because ${offset} is between ${this.sliceRanges[sliceIndex].start} and ${this.sliceRanges[sliceIndex].end})`)
+    console.log(`--> on start: slice ${sliceIndex} at ${offset} sec is seek target (${this.sliceRanges[sliceIndex].start} <= ${offset} < ${this.sliceRanges[sliceIndex].end})`)
 
     const withinSliceOffset = offset - this.sliceRanges[sliceIndex].start
 

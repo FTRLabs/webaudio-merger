@@ -7,7 +7,7 @@ import { Component, OnInit } from '@angular/core';
 })
 export class AppComponent implements OnInit {
   ngOnInit (): void {
-    console.log(`--> init app`)
+    // console.log(`--> init app`)
     // const thing = new AudioContext()
     // console.log(`--> made context`)
   }

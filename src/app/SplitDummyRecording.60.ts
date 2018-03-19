@@ -10,7 +10,6 @@ const trmChunkNames = DUMMY_TRM_NAMES.map(
 )
 
 const flattenedTrmChunkNames = [].concat(...trmChunkNames)
-console.log(`--> Num 1 min chunks: ${flattenedTrmChunkNames.length}`)
 
 export const durationSeconds = 60
 
@@ -19,7 +18,6 @@ export const SPLIT_DUMMY_RECORDING: Recording = {
   trmSlices: flattenedTrmChunkNames.slice(0, 50).map(dummyTrm => ({
     name: dummyTrm,
     // TODO LATER: get this from the server
-    // TODO: use accurate durations, as now this is used to queue subsequent slices
     durationSeconds
   }))
 }

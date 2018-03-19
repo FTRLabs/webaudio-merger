@@ -1,17 +1,8 @@
 import { Chunk } from './Chunk'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
-
-export interface SliceEvent {
-}
-
-export class SliceStartedEvent implements SliceEvent {
-  constructor (
-    readonly ctxStartedAtTime: number,
-    readonly offset: number
-  ) {
-  }
-}
+import 'rxjs/add/operator/switchMap'
+import 'rxjs/add/operator/take'
 
 /**
  * A temporal slice of a recording. Each slice may contain several chunks, one per channel.
@@ -19,38 +10,32 @@ export class SliceStartedEvent implements SliceEvent {
 export class Slice {
 
   // TODO LATER: extend to progress events?
-  events: Observable<SliceEvent>
-
-  eventsSubject: Subject<SliceEvent> = new Subject<SliceEvent>()
+  ended: Observable<Event>
+  private readonly startedSubject: Subject<void> = new Subject<void>()
 
   constructor (
     private chunks: Chunk[],
-    private audioContext: AudioContext
+    // TODO LATER: for debugging only; remove:
+    private readonly index: number
   ) {
-    this.events = this.eventsSubject.asObservable()
+    // Slice ends at the same time as the first chunk to end after the slice was started
+    this.ended = this.startedSubject.switchMap(() => Observable
+      .merge(...this.chunks.map(c => c.ended))
+      .take(1)
+    )
   }
 
-  async start (when: number, offset: number = 0): Promise<void> {
+  async start (offset: number = 0): Promise<void> {
     await this.load()
-    this.chunks.forEach(chunk => chunk.start(when, offset))
-
-    const ctxCurrentTime = this.audioContext.currentTime
-
-    // It either just started, or will start at `when` (whichever is later)
-    const ctxStartedAtTime = ctxCurrentTime > when
-      ? ctxCurrentTime
-      : when
-
-    // TODO: this will cascade to load all subsequent slices at once!
-    // TODO: so, need to call start not on SliceStartedEvent, but on _actually playing_ event, or time progress, etc...
-    this.eventsSubject.next(new SliceStartedEvent(ctxStartedAtTime, offset))
+    this.chunks.forEach(chunk => chunk.start(offset))
+    this.startedSubject.next()
   }
 
   stop () {
     this.chunks.forEach(c => c.stop())
   }
 
-  private load (): Promise<void[]> {
+  async load (): Promise<void[]> {
     return Promise.all(this.chunks.map(chunk => chunk.load()))
   }
 }

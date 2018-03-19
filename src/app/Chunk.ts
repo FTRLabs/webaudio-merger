@@ -38,14 +38,20 @@ export class Chunk {
     }
   }
 
-  start (when?: number, offset?: number): void {
+  start (offset?: number): void {
     if (!this.audioBuffer) {
       throw new Error('Cannot start chunk before loaded')
     }
 
     // Ensure that audio is stopped if this chunk is already playing
     if (this.source) {
-      this.source.stop()
+      const oldSource = this.source
+      console.log(`--> on chunk start: stopping playing chunk in slice ${this.sliceIndex} at ${offset}`)
+      // Suppress onended event, because with this call to stop(), the chunk hasn't ended, we're just seeking within it
+      oldSource.onended = () => {
+        oldSource.disconnect();
+      }
+      oldSource.stop()
     }
 
     // Always create a new AudioBufferSourceNode, as they can only be `start`ed once each
@@ -53,27 +59,37 @@ export class Chunk {
     source.buffer = this.audioBuffer
     source.connect(this.destination)
     source.onended = async event => {
-      console.log(`--> chunk ${this.sliceIndex}/ch${this.channelIndex} ended (${this.trmName})`, event)
+      // console.log(`--> chunk in slice ${this.sliceIndex} ended (${this.trmName}); clearing buffer`, event)
+      console.log(`--> chunk in slice ${this.sliceIndex} ended; clearing buffer`)
       this.unload()
       this.endedSubject.next(event)
     }
 
+    // console.log(`--> starting chunk in slice ${this.sliceIndex}, from ${offset} (${this.trmName})`)
+
+    console.log(`--> on chunk start: starting playing chunk in slice ${this.sliceIndex} at ${offset}`)
+    source.start(0, offset)
     this.source = source
-
-    console.log(`--> starting chunk ${this.sliceIndex}/ch${this.channelIndex} at ${when}, from ${offset} (${this.trmName})`)
-
-    this.source.start(when, offset)
   }
 
   stop (): void {
     if (this.source) {
+      // console.log(`--> on stop: chunk has source ******`)
       this.source.stop()
+    } else {
+      // console.log(`--> on stop: chunk has no source`)
     }
     this.unload()
   }
 
   private async doLoad (): Promise<void> {
-    this.audioBuffer = await this.decode()
+    // TODO LATER: remove simulated slow decoding
+    return new Promise<void>((resolve, reject) => {
+      setTimeout(async () => {
+        this.audioBuffer = await this.decode()
+        resolve()
+      }, 3000)
+    })
   }
 
   private async decode (): Promise<AudioBuffer> {
@@ -81,7 +97,7 @@ export class Chunk {
     // Copy the buffer before decoding to ensure nothing breaks if we later stop and re-start this chunk.
     const copiedArrayBuffer = this.arrayBuffer.slice(0)
 
-    console.log(`--> decoding chunk ${this.sliceIndex}/ch${this.channelIndex} (${this.trmName})`)
+    // console.log(`--> decoding chunk in slice ${this.sliceIndex} (${this.trmName})`)
     return await this.audioContext.decodeAudioData(copiedArrayBuffer)
   }
 
@@ -92,7 +108,6 @@ export class Chunk {
 
     this.loading = undefined
 
-    console.log(`--> cleared buffer for chunk ${this.sliceIndex}/ch${this.channelIndex} (${this.trmName})`)
     this.audioBuffer = undefined
     if (this.source) {
       const scratchBuffer = this.audioContext.createBuffer(1, 1, 22050);
