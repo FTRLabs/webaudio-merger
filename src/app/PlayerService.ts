@@ -69,9 +69,9 @@ export class PlayerService {
     sliceEnded.subscribe(async (event: SliceEndedEvent) => {
         const nextSlice = this.slices[event.sliceIndex + 1]
         if (nextSlice) {
-          console.log(`--> on slice ended: slice ${event.sliceIndex + 1}: auto-playing`)
+          console.log(`--> on slice ended: slice ${event.sliceIndex + 1}: auto-playing`, nextSlice)
           await nextSlice.start()
-          console.log(`--> on slice ended: slice ${event.sliceIndex + 1}: auto-played`)
+          console.log(`--> on slice ended: slice ${event.sliceIndex + 1}: auto-played`, nextSlice)
         }
       },
       error => {
@@ -81,9 +81,9 @@ export class PlayerService {
     sliceEnded.subscribe(async (event: SliceEndedEvent) => {
         const sliceToLoad = this.slices[event.sliceIndex + 2]
         if (sliceToLoad) {
-          console.log(`--> on slice ended: auto-loading slice ${event.sliceIndex + 2}`)
+          console.log(`--> on slice ended: auto-loading slice ${event.sliceIndex + 2}`, sliceToLoad)
           await sliceToLoad.load()
-          console.log(`--> on slice ended: auto-loaded slice ${event.sliceIndex + 2}`)
+          console.log(`--> on slice ended: auto-loaded slice ${event.sliceIndex + 2}`, sliceToLoad)
         }
       },
       error => {
@@ -113,13 +113,13 @@ export class PlayerService {
     const slicePosition = this.findSlice(offset)
     await Promise.all(this.slices.map(async (slice, sliceIndex) => {
       if (sliceIndex === slicePosition.sliceIndex) {
-        console.log(`--> on start: slice ${sliceIndex}: play at offset ${slicePosition.sliceOffset}`)
+        console.log(`--> on start: slice ${sliceIndex}: play at offset ${slicePosition.sliceOffset}`, slice)
         await slice.start(slicePosition.sliceOffset)
-        console.log(`--> on start: slice ${sliceIndex}: playing at offset ${slicePosition.sliceOffset}`)
+        console.log(`--> on start: slice ${sliceIndex}: playing at offset ${slicePosition.sliceOffset}`, slice)
       } else if (sliceIndex === slicePosition.sliceIndex + 1) {
-        console.log(`--> on start: slice ${sliceIndex}: load`)
+        console.log(`--> on start: slice ${sliceIndex}: load`, slice)
         await slice.load()
-        console.log(`--> on start: slice ${sliceIndex}: loaded`)
+        console.log(`--> on start: slice ${sliceIndex}: loaded`, slice)
       } else {
         // Note: this ensures other slices and their chunks stop, and release their memory
         console.log(`--> on start: slice other: stop`)
