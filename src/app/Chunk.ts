@@ -83,13 +83,13 @@ export class Chunk {
   }
 
   private async doLoad (): Promise<void> {
-    // TODO LATER: remove simulated slow decoding
-    return new Promise<void>((resolve, reject) => {
-      setTimeout(async () => {
-        this.audioBuffer = await this.decode()
-        resolve()
-      }, 3000)
-    })
+    // TODO LATER: use this to experiment with simulated slow decoding
+    // return new Promise<void>((resolve, reject) => {
+    //   setTimeout(async () => {
+    this.audioBuffer = await this.decode()
+    //   resolve()
+    // }, 3000)
+    // })
   }
 
   private async decode (): Promise<AudioBuffer> {
@@ -98,7 +98,12 @@ export class Chunk {
     const copiedArrayBuffer = this.arrayBuffer.slice(0)
 
     // console.log(`--> decoding chunk in slice ${this.sliceIndex} (${this.trmName})`)
-    return await this.audioContext.decodeAudioData(copiedArrayBuffer)
+    try {
+      return await this.audioContext.decodeAudioData(copiedArrayBuffer)
+    } catch (err) {
+      console.log(`--> Error decoding audio data for chunk in slice ${this.sliceIndex} (${this.trmName})`, err)
+      throw err
+    }
   }
 
   /**
