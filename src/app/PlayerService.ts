@@ -53,7 +53,7 @@ export class PlayerService {
     }, 0)
     this.durationSecondsSubject.next(duration)
     this.loadSegment(this.index)
-    this.loadOtherSegment(this.index + 1)
+    /*this.loadOtherSegment(this.index + 1)*/
   }
 
   loadOtherSegment (index: number): void {
@@ -80,10 +80,10 @@ export class PlayerService {
     this.playingAudio = this.audio
   }
 
-  setOtherAudio (audio: HTMLAudioElement): void {
+  /*setOtherAudio (audio: HTMLAudioElement): void {
     this.otherAudio = audio
     this.otherAudio.ontimeupdate = this.handleTimeEvent.bind(this)
-  }
+  }*/
 
   onEnded (): void {
     this.index++
@@ -95,8 +95,9 @@ export class PlayerService {
     }
     console.log(`offset: ${offset}`)
     this.offset = offset
-    this.playingAudio = this.otherAudio
-    this.otherAudio.play()
+    this.loadSegment(this.index)
+    this.playingAudio = this.audio
+    this.audio.play()
   }
 
   handleTimeEvent (): void {

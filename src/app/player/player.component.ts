@@ -23,7 +23,7 @@ export class PlayerComponent implements OnInit {
 
   async ngOnInit () {
     this.playerService.setAudio(this.audio.nativeElement)
-    this.playerService.setOtherAudio(this.audio2.nativeElement)
+    // this.playerService.setOtherAudio(this.audio2.nativeElement)
     await this.playerService.load(DUMMY_RECORDING)
 
     this.durationSeconds = this.playerService.durationSeconds

@@ -1,8 +1,8 @@
 import { Recording } from './types/Recording'
 
 const dummyTrms = [
-  'MA-BAR-BAR-CH2-C1-R1--SUPE_20160914-1401_01d20e9084b43dd0',
-  'MA-BAR-BAR-CH2-C1-R1--SUPE_20160914-1406_01d20e913794a160',
+  'bensound-summer',
+  'bensound-ukulele',
   // 'MA-BAR-BAR-CH2-C1-R1--SUPE_20160914-1411_01d20e91ea75a130',
   // 'MA-BAR-BAR-CH2-C1-R1--SUPE_20160914-1416_01d20e929d56a100',
   // 'MA-BAR-BAR-CH2-C1-R1--SUPE_20160914-1426_01d20e9403103c30',
@@ -32,6 +32,6 @@ export const DUMMY_RECORDING: Recording = {
     // Manually worked out this time, using these two commands:
     // $ ffmpeg -i <in>.aac <out>.wav
     // $ ffprobe -loglevel fatal -print_format json -show_format <out>.wav
-    durationSeconds: 300.094694
+    durationSeconds: 200
   }))
 }
